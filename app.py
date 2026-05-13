@@ -10,27 +10,24 @@ def generate_synthetic_data():
     n = 10000
     
     # Generate random behaviors for 10,000 users
-    login_freq = np.random.randint(0, 31, n) # Logins per month (0 to 30)
-    session_decay = np.random.uniform(-50, 50, n) # % change in session time
-    payment_fail = np.random.uniform(0, 30, n) # % of failed payments
-    support_tickets = np.random.randint(0, 5, n) # Tickets in last 7 days
-    upi_recency = np.random.randint(0, 45, n) # Days since last UPI txn
-    cart_abandon = np.random.randint(0, 2, n) # 1 if abandoned, 0 if not
+    login_freq = np.random.randint(0, 31, n) 
+    session_decay = np.random.uniform(-50, 50, n) 
+    payment_fail = np.random.uniform(0, 30, n) 
+    support_tickets = np.random.randint(0, 5, n) 
+    upi_recency = np.random.randint(0, 45, n) 
+    cart_abandon = np.random.randint(0, 2, n) 
     
     # THE ARCHITECT'S LOGIC (Desensitized Top-of-Funnel)
-    # Lower penalty for low logins: (30 - logins) * 1.5
-    login_penalty = (30 - login_freq) * 1.5
-    
-    # Drastically lower penalty for session time drops: * 0.5
-    decay_penalty = session_decay * -0.5 
+    login_penalty = (30 - login_freq) * 1.0   # Reduced to 1.0
+    decay_penalty = session_decay * -0.2      # Drastically desensitized to 0.2
     
     risk_score = (
-        login_penalty +               # +1.5 per missed daily login (Desensitized)
-        decay_penalty +               # +0.5 per % drop in time (Desensitized)
-        (payment_fail * 3.0) +        # +3.0 per 1% of failures (High Friction)
-        (support_tickets * 12.0) +    # +12.0 per ticket (The Breaking Point)
-        (cart_abandon * 10.0) +       # +10.0 flat for abandoned cart
-        (upi_recency * 1.0)           # +1.0 per day of UPI inactivity
+        login_penalty +               
+        decay_penalty +               
+        (payment_fail * 3.0) +        
+        (support_tickets * 12.0) +    
+        (cart_abandon * 10.0) +       
+        (upi_recency * 1.0)           
     )
     
     # THRESHOLD: 50 Points
@@ -69,18 +66,22 @@ st.markdown("<p style='color:#8b949e;'>Agentic AI Engine: 6-Factor Early-Warning
 st.markdown("---")
 
 st.sidebar.header("User Behavior Input")
-st.sidebar.caption("Punch in a user's stats to predict churn probability.")
+st.sidebar.caption("Adjust the parameters to simulate a user's behavior.")
 
-# All 6 Inputs
-in_logins = st.sidebar.slider("Logins (Last 30 Days)", 0, 30, 15)
-in_decay = st.sidebar.slider("Session Time Decay (%)", -50, 50, -10)
-in_recency = st.sidebar.slider("UPI Recency (Days ago)", 0, 45, 10)
-in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 30, 5)
-in_tickets = st.sidebar.slider("Support Tickets (Last 7 Days)", 0, 5, 0)
-in_cart = st.sidebar.selectbox("Abandoned Cart recently?", [0, 1])
+# Reordered Inputs with "Healthy" Defaults
+in_tickets = st.sidebar.slider("Support Tickets Raised (Last 7 Days)", 0, 5, 0)
+in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 30, 0)
+in_cart_str = st.sidebar.selectbox("Abandoned Cart recently?", ["No", "Yes"], index=0)
+in_recency = st.sidebar.slider("UPI Recency (Days ago)", 0, 45, 2)
+in_logins = st.sidebar.slider("Logins (Last 30 Days)", 0, 30, 25)
+in_decay = st.sidebar.slider("Session Time Decay (%)", -50, 50, 0)
+
+# Translate UI Yes/No back to AI 1/0
+in_cart = 1 if in_cart_str == "Yes" else 0
 
 if st.sidebar.button("Run Radar Scan", type="primary"):
     
+    # Must feed data to the model in the exact order it was trained
     user_data = pd.DataFrame([[in_logins, in_decay, in_fail, in_tickets, in_recency, in_cart]], 
                              columns=['Logins_Per_Month', 'Session_Decay_Pct', 'Payment_Fail_Pct', 
                                       'Support_Tickets', 'UPI_Recency_Days', 'Cart_Abandoned'])
