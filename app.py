@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-import time
+import plotly.graph_objects as go
 
 # --- 1. SYNTHETIC DATA GENERATOR ---
 @st.cache_data
 def generate_synthetic_data():
     np.random.seed(42)
     n = 10000
+    
     login_freq = np.random.randint(0, 31, n) 
     session_decay = np.random.uniform(-50, 50, n) 
     payment_fail = np.random.uniform(0, 7, n) 
@@ -29,6 +30,7 @@ def generate_synthetic_data():
     )
     
     churn = np.where(risk_score > 50, 1, 0)
+    
     df = pd.DataFrame({
         'Logins_Per_Month': login_freq,
         'Session_Decay_Pct': session_decay,
@@ -52,72 +54,57 @@ def train_model(df):
 df = generate_synthetic_data()
 model = train_model(df)
 
-# --- 3. HIGH-TECH HUD UI ---
-st.set_page_config(page_title="J.A.R.V.I.S. | Churn Radar", layout="wide")
+# --- 3. UI/UX: THE GAUGE CHART ---
+def create_gauge_chart(probability):
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = probability,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': "System Threat Level", 'font': {'size': 24, 'color': 'white'}},
+        number = {'suffix': "%", 'font': {'size': 50, 'color': 'white'}},
+        gauge = {
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "white"},
+            'bar': {'color': "rgba(255,255,255,0.5)"},
+            'bgcolor': "black",
+            'borderwidth': 2,
+            'bordercolor': "gray",
+            'steps': [
+                {'range': [0, 20], 'color': '#3fb950'},    # Safe
+                {'range': [20, 40], 'color': '#a371f7'},   # Drifting
+                {'range': [40, 60], 'color': '#d29922'},   # Friction
+                {'range': [60, 85], 'color': '#f85149'},   # Critical
+                {'range': [85, 100], 'color': '#8b949e'}   # Ghost
+            ],
+            'threshold': {
+                'line': {'color': "white", 'width': 4},
+                'thickness': 0.75,
+                'value': probability
+            }
+        }
+    ))
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=350, margin=dict(l=20, r=20, t=50, b=20))
+    return fig
 
-# CUSTOM CSS FOR JARVIS THEME
+# --- 4. THE FRONT-END DASHBOARD ---
+st.set_page_config(page_title="Churn Radar", layout="wide", initial_sidebar_state="expanded")
+
+# Custom Tech CSS
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-    
-    /* Main Background */
-    .stApp {
-        background-color: #050810;
-        background-image: radial-gradient(circle at 50% 0%, #10192b 0%, #050810 70%);
-        color: #a0aec0;
-    }
-    
-    /* Headers & Tech Font */
-    h1, h2, h3 {
-        font-family: 'Share Tech Mono', monospace !important;
-        color: #00e5ff !important;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #0b101a;
-        border-right: 1px solid #00e5ff33;
-    }
-    
-    /* Glowing Button */
-    .stButton>button {
-        background-color: transparent !important;
-        border: 1px solid #00e5ff !important;
-        color: #00e5ff !important;
-        border-radius: 4px;
-        box-shadow: 0 0 10px #00e5ff44;
-        transition: all 0.3s ease;
-        font-family: 'Share Tech Mono', monospace !important;
-        letter-spacing: 1px;
-    }
-    .stButton>button:hover {
-        background-color: #00e5ff !important;
-        color: #050810 !important;
-        box-shadow: 0 0 20px #00e5ff;
-    }
-    
-    /* HUD Output Box */
-    .hud-box {
-        background-color: #0b1320;
-        border: 1px solid #00e5ff88;
-        border-radius: 5px;
-        padding: 20px;
-        box-shadow: inset 0 0 15px #00e5ff22, 0 0 15px #00e5ff22;
-        margin-top: 20px;
-    }
+    .main {background-color: #0d1117;}
+    h1, h2, h3, p, span {color: #e6edf3;}
+    .stSlider > div > div > div > div {background-color: #58a6ff !important;}
+    .css-1d391kg {background-color: #161b22;} 
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-st.title("📡 TACTICAL CHURN RADAR")
-st.markdown("<p style='color:#00e5ff; font-family:\"Share Tech Mono\", monospace;'>SYSTEM STATUS: ONLINE | AGENTIC AI ENGINE INITIALIZED</p>", unsafe_allow_html=True)
-st.markdown("<hr style='border: 1px solid #00e5ff44;'>", unsafe_allow_html=True)
+st.title("📡 Tactical Churn Radar")
+st.markdown("<p style='color:#8b949e; font-family: monospace;'>SYS_AGENT: 6-Factor Predictive GTM Engine // V2.0</p>", unsafe_allow_html=True)
+st.markdown("---")
 
-st.sidebar.header("USER TELEMETRY INPUT")
-st.sidebar.caption("Override default telemetry to simulate target user.")
+st.sidebar.markdown("<h2 style='text-align: center;'>[ CONTROL PANEL ]</h2>", unsafe_allow_html=True)
 
-in_tickets = st.sidebar.slider("Support Tickets Raised (Last 7 Days)", 0, 5, 0)
+in_tickets = st.sidebar.slider("Support Tickets Raised (7d)", 0, 5, 0)
 in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 7, 0)
 in_cart_str = st.sidebar.selectbox("Abandoned Cart recently?", ["No", "Yes"], index=0)
 in_recency = st.sidebar.slider("UPI Recency (Days ago)", 0, 45, 2)
@@ -126,11 +113,7 @@ in_decay = st.sidebar.slider("Session Time Decay (%)", -50, 50, 0)
 
 in_cart = 1 if in_cart_str == "Yes" else 0
 
-if st.sidebar.button("EXECUTE RADAR SCAN"):
-    
-    # Fake processing delay for dramatic "tech" effect
-    with st.spinner("Analyzing behavioral vectors..."):
-        time.sleep(0.8)
+if st.sidebar.button("Run Radar Scan", type="primary", use_container_width=True):
     
     user_data = pd.DataFrame([[in_logins, in_decay, in_fail, in_tickets, in_recency, in_cart]], 
                              columns=['Logins_Per_Month', 'Session_Decay_Pct', 'Payment_Fail_Pct', 
@@ -138,50 +121,36 @@ if st.sidebar.button("EXECUTE RADAR SCAN"):
     
     churn_prob = model.predict_proba(user_data)[0][1] * 100
     
-    # UX CLAMP
-    if churn_prob < 8.0:
-        display_prob = "< 1.0%"
-    else:
-        display_prob = f"{churn_prob:.1f}%"
+    # UX Clamp
+    display_prob = 0.5 if churn_prob < 8.0 else churn_prob
         
-    if churn_prob <= 20:
-        color = "#00e5ff" # Cyan/Safe
-        status = "TIER 1: SAFE LOYALIST"
-        rec = "User is highly engaged. Do not offer discounts. Upsell premium features."
-    elif churn_prob <= 40:
-        color = "#a371f7" # Purple
-        status = "TIER 2: DRIFTING"
-        rec = "Logins/Session time decaying. Send push notification highlighting trending shop items."
-    elif churn_prob <= 60:
-        color = "#d29922" # Yellow
-        status = "TIER 3: FRICTION-HIT"
-        rec = "Monitor closely. If failure rate > 0, send automated apology SMS with ₹20 cashback to offset friction."
-    elif churn_prob <= 85:
-        color = "#f85149" # Red
-        status = "TIER 4: CRITICAL FLIGHT RISK"
-        rec = "Immediate Action Required. High ticket/failure velocity. Trigger ₹100 win-back SMS."
-    else:
-        color = "#ff003c" # Crimson Red
-        status = "TIER 5: TERMINAL / GHOST"
-        rec = "User has abandoned the platform. Stop ad-spend targeting to save CAC. Add to 90-day cold reactivation list."
+    st.subheader("🧠 Threat Assessment & Telemetry")
+    
+    col1, col2 = st.columns([1.2, 1])
+    
+    with col1:
+        st.plotly_chart(create_gauge_chart(display_prob), use_container_width=True)
+    
+    with col2:
+        if display_prob <= 20:
+            status, color, rec = "Tier 1: Safe", "🟢", "System nominal. Upsell premium routing."
+        elif display_prob <= 40:
+            status, color, rec = "Tier 2: Drifting", "🟣", "Telemetry decaying. Ping with trending feature."
+        elif display_prob <= 60:
+            status, color, rec = "Tier 3: Friction-Hit", "🟡", "Friction detected. Deploy automated apology protocol."
+        elif display_prob <= 85:
+            status, color, rec = "Tier 4: Critical Risk", "🔴", "Flight risk imminent. Deploy ₹100 win-back vector."
+        else:
+            status, color, rec = "Tier 5: Terminal", "⚫", "Ghost status. Cut CAC burn immediately."
+            
+        st.markdown(f"### Status: {color} {status}")
+        st.info(f"**Action Required:** {rec}")
         
-    # WRAP THE OUTPUT IN THE HUD BOX
-    st.markdown(f"""
-        <div class="hud-box">
-            <h3 style="color: {color} !important; font-size: 20px;">>> THREAT ASSESSMENT COMPLETE</h3>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <div>
-                    <p style="margin: 0; font-size: 14px; text-transform: uppercase;">Calculated Flight Risk</p>
-                    <h1 style="color: {color} !important; font-size: 65px; margin: 0;">{display_prob}</h1>
-                    <p style="color: {color}; font-weight: bold; font-size: 18px; margin: 0; font-family: 'Share Tech Mono', monospace;">[{status}]</p>
-                </div>
-                <div style="width: 50%; border-left: 1px solid #00e5ff44; padding-left: 20px;">
-                    <p style="margin: 0; font-size: 14px; text-transform: uppercase; color: #00e5ff;">RECOMMENDED AGENTIC ACTION:</p>
-                    <p style="color: #ffffff; font-size: 16px; margin-top: 5px;">{rec}</p>
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-        
-st.markdown("<br><br><br><br><hr style='border: 1px solid #00e5ff44;'>", unsafe_allow_html=True)
-st.caption("SYSTEM NOTE: Neural network trained on 10,000 synthetic profiles. UI Layer includes an algorithmic smoothing clamp to filter out extreme-edge baseline noise. Authorized access only.")
+        # Telemetry breakdown using st.metric
+        st.markdown("#### Primary Friction Vectors")
+        m1, m2 = st.columns(2)
+        m1.metric(label="Support Anomaly", value=f"{in_tickets} Tickets", delta="Critical" if in_tickets > 1 else "Normal", delta_color="inverse")
+        m2.metric(label="Payment Failure", value=f"{in_fail}%", delta="High Friction" if in_fail > 3 else "Normal", delta_color="inverse")
+
+st.markdown("---")
+st.caption("SYS_NOTE: Random Forest architecture trained on 10k behavioral profiles. UI layer implements threshold clamping for operational clarity.")
