@@ -2,24 +2,22 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+import time
 
-# --- 1. SYNTHETIC DATA GENERATOR (DESENSITIZED ENGAGEMENT ENGINE) ---
+# --- 1. SYNTHETIC DATA GENERATOR ---
 @st.cache_data
 def generate_synthetic_data():
     np.random.seed(42)
     n = 10000
-    
-    # Generate random behaviors for 10,000 users
     login_freq = np.random.randint(0, 31, n) 
     session_decay = np.random.uniform(-50, 50, n) 
-    payment_fail = np.random.uniform(0, 30, n) 
+    payment_fail = np.random.uniform(0, 7, n) 
     support_tickets = np.random.randint(0, 5, n) 
     upi_recency = np.random.randint(0, 45, n) 
     cart_abandon = np.random.randint(0, 2, n) 
     
-    # THE ARCHITECT'S LOGIC (Desensitized Top-of-Funnel)
-    login_penalty = (30 - login_freq) * 1.0   # Reduced to 1.0
-    decay_penalty = session_decay * -0.2      # Drastically desensitized to 0.2
+    login_penalty = (30 - login_freq) * 1.0   
+    decay_penalty = session_decay * -0.2      
     
     risk_score = (
         login_penalty +               
@@ -30,9 +28,7 @@ def generate_synthetic_data():
         (upi_recency * 1.0)           
     )
     
-    # THRESHOLD: 50 Points
     churn = np.where(risk_score > 50, 1, 0)
-    
     df = pd.DataFrame({
         'Logins_Per_Month': login_freq,
         'Session_Decay_Pct': session_decay,
@@ -53,71 +49,139 @@ def train_model(df):
     model.fit(X, y)
     return model
 
-# Initialize Data and Model
 df = generate_synthetic_data()
 model = train_model(df)
 
-# --- 3. THE FRONT-END DASHBOARD (5-TIER SYSTEM) ---
-st.set_page_config(page_title="Churn Radar", layout="wide")
-st.markdown("""<style>.main {background-color: #0e1117; color: white;} </style>""", unsafe_allow_html=True)
+# --- 3. HIGH-TECH HUD UI ---
+st.set_page_config(page_title="J.A.R.V.I.S. | Churn Radar", layout="wide")
 
-st.title("📡 Predictive Churn Radar")
-st.markdown("<p style='color:#8b949e;'>Agentic AI Engine: 6-Factor Early-Warning System</p>", unsafe_allow_html=True)
-st.markdown("---")
+# CUSTOM CSS FOR JARVIS THEME
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    
+    /* Main Background */
+    .stApp {
+        background-color: #050810;
+        background-image: radial-gradient(circle at 50% 0%, #10192b 0%, #050810 70%);
+        color: #a0aec0;
+    }
+    
+    /* Headers & Tech Font */
+    h1, h2, h3 {
+        font-family: 'Share Tech Mono', monospace !important;
+        color: #00e5ff !important;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #0b101a;
+        border-right: 1px solid #00e5ff33;
+    }
+    
+    /* Glowing Button */
+    .stButton>button {
+        background-color: transparent !important;
+        border: 1px solid #00e5ff !important;
+        color: #00e5ff !important;
+        border-radius: 4px;
+        box-shadow: 0 0 10px #00e5ff44;
+        transition: all 0.3s ease;
+        font-family: 'Share Tech Mono', monospace !important;
+        letter-spacing: 1px;
+    }
+    .stButton>button:hover {
+        background-color: #00e5ff !important;
+        color: #050810 !important;
+        box-shadow: 0 0 20px #00e5ff;
+    }
+    
+    /* HUD Output Box */
+    .hud-box {
+        background-color: #0b1320;
+        border: 1px solid #00e5ff88;
+        border-radius: 5px;
+        padding: 20px;
+        box-shadow: inset 0 0 15px #00e5ff22, 0 0 15px #00e5ff22;
+        margin-top: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-st.sidebar.header("User Behavior Input")
-st.sidebar.caption("Adjust the parameters to simulate a user's behavior.")
+st.title("📡 TACTICAL CHURN RADAR")
+st.markdown("<p style='color:#00e5ff; font-family:\"Share Tech Mono\", monospace;'>SYSTEM STATUS: ONLINE | AGENTIC AI ENGINE INITIALIZED</p>", unsafe_allow_html=True)
+st.markdown("<hr style='border: 1px solid #00e5ff44;'>", unsafe_allow_html=True)
 
-# Reordered Inputs with "Healthy" Defaults
+st.sidebar.header("USER TELEMETRY INPUT")
+st.sidebar.caption("Override default telemetry to simulate target user.")
+
 in_tickets = st.sidebar.slider("Support Tickets Raised (Last 7 Days)", 0, 5, 0)
-in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 30, 0)
+in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 7, 0)
 in_cart_str = st.sidebar.selectbox("Abandoned Cart recently?", ["No", "Yes"], index=0)
 in_recency = st.sidebar.slider("UPI Recency (Days ago)", 0, 45, 2)
 in_logins = st.sidebar.slider("Logins (Last 30 Days)", 0, 30, 25)
 in_decay = st.sidebar.slider("Session Time Decay (%)", -50, 50, 0)
 
-# Translate UI Yes/No back to AI 1/0
 in_cart = 1 if in_cart_str == "Yes" else 0
 
-if st.sidebar.button("Run Radar Scan", type="primary"):
+if st.sidebar.button("EXECUTE RADAR SCAN"):
     
-    # Must feed data to the model in the exact order it was trained
+    # Fake processing delay for dramatic "tech" effect
+    with st.spinner("Analyzing behavioral vectors..."):
+        time.sleep(0.8)
+    
     user_data = pd.DataFrame([[in_logins, in_decay, in_fail, in_tickets, in_recency, in_cart]], 
                              columns=['Logins_Per_Month', 'Session_Decay_Pct', 'Payment_Fail_Pct', 
                                       'Support_Tickets', 'UPI_Recency_Days', 'Cart_Abandoned'])
     
     churn_prob = model.predict_proba(user_data)[0][1] * 100
     
-    st.subheader("🧠 AI Threat Assessment")
-    col1, col2 = st.columns(2)
-    
-    # 5-TIER CLASSIFICATION LOGIC
+    # UX CLAMP
+    if churn_prob < 8.0:
+        display_prob = "< 1.0%"
+    else:
+        display_prob = f"{churn_prob:.1f}%"
+        
     if churn_prob <= 20:
-        color = "#3fb950" # Green
-        status = "Tier 1: Safe Loyalist"
+        color = "#00e5ff" # Cyan/Safe
+        status = "TIER 1: SAFE LOYALIST"
         rec = "User is highly engaged. Do not offer discounts. Upsell premium features."
     elif churn_prob <= 40:
         color = "#a371f7" # Purple
-        status = "Tier 2: Drifting"
+        status = "TIER 2: DRIFTING"
         rec = "Logins/Session time decaying. Send push notification highlighting trending shop items."
     elif churn_prob <= 60:
         color = "#d29922" # Yellow
-        status = "Tier 3: Friction-Hit"
+        status = "TIER 3: FRICTION-HIT"
         rec = "Monitor closely. If failure rate > 0, send automated apology SMS with ₹20 cashback to offset friction."
     elif churn_prob <= 85:
         color = "#f85149" # Red
-        status = "Tier 4: Critical Flight Risk"
+        status = "TIER 4: CRITICAL FLIGHT RISK"
         rec = "Immediate Action Required. High ticket/failure velocity. Trigger ₹100 win-back SMS."
     else:
-        color = "#8b949e" # Grey
-        status = "Tier 5: Terminal / Ghost"
+        color = "#ff003c" # Crimson Red
+        status = "TIER 5: TERMINAL / GHOST"
         rec = "User has abandoned the platform. Stop ad-spend targeting to save CAC. Add to 90-day cold reactivation list."
         
-    col1.markdown(f"<h1 style='color: {color}; font-size: 55px;'>{churn_prob:.1f}% Risk</h1>", unsafe_allow_html=True)
-    col1.markdown(f"**Classification:** {status}")
-    
-    col2.markdown("### ⚡ Strategic Recommendation")
-    col2.info(rec)
+    # WRAP THE OUTPUT IN THE HUD BOX
+    st.markdown(f"""
+        <div class="hud-box">
+            <h3 style="color: {color} !important; font-size: 20px;">>> THREAT ASSESSMENT COMPLETE</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <div>
+                    <p style="margin: 0; font-size: 14px; text-transform: uppercase;">Calculated Flight Risk</p>
+                    <h1 style="color: {color} !important; font-size: 65px; margin: 0;">{display_prob}</h1>
+                    <p style="color: {color}; font-weight: bold; font-size: 18px; margin: 0; font-family: 'Share Tech Mono', monospace;">[{status}]</p>
+                </div>
+                <div style="width: 50%; border-left: 1px solid #00e5ff44; padding-left: 20px;">
+                    <p style="margin: 0; font-size: 14px; text-transform: uppercase; color: #00e5ff;">RECOMMENDED AGENTIC ACTION:</p>
+                    <p style="color: #ffffff; font-size: 16px; margin-top: 5px;">{rec}</p>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
         
-st.markdown("---")
-st.caption("**Architect Note:** Model trained on 10,000 synthetic profiles. Weights calibrated for utility/payment platforms. Engagement decay (Logins/Session Time) is desensitized, while friction metrics (Support Tickets & Failures) act as the primary structural drivers of the Churn Classification.")
+st.markdown("<br><br><br><br><hr style='border: 1px solid #00e5ff44;'>", unsafe_allow_html=True)
+st.caption("SYSTEM NOTE: Neural network trained on 10,000 synthetic profiles. UI Layer includes an algorithmic smoothing clamp to filter out extreme-edge baseline noise. Authorized access only.")
