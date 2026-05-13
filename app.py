@@ -54,18 +54,19 @@ def train_model(df):
 df = generate_synthetic_data()
 model = train_model(df)
 
-# --- 3. UI/UX: THE GAUGE CHART ---
+# --- 3. UI/UX: THE GAUGE CHART (UPDATED FOR LIGHT MODE) ---
 def create_gauge_chart(probability):
     fig = go.Figure(go.Indicator(
         mode = "gauge+number",
         value = probability,
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "System Threat Level", 'font': {'size': 24, 'color': 'white'}},
-        number = {'suffix': "%", 'font': {'size': 50, 'color': 'white'}},
+        # Changed font colors to dark slate
+        title = {'text': "System Threat Level", 'font': {'size': 24, 'color': '#1f2937'}},
+        number = {'suffix': "%", 'font': {'size': 50, 'color': '#1f2937'}},
         gauge = {
-            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "white"},
-            'bar': {'color': "rgba(255,255,255,0.5)"},
-            'bgcolor': "black",
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f2937"},
+            'bar': {'color': "rgba(0,0,0,0.15)"}, # Subtle dark bar
+            'bgcolor': "white",
             'borderwidth': 2,
             'bordercolor': "gray",
             'steps': [
@@ -76,33 +77,34 @@ def create_gauge_chart(probability):
                 {'range': [85, 100], 'color': '#8b949e'}   # Ghost
             ],
             'threshold': {
-                'line': {'color': "white", 'width': 4},
+                'line': {'color': "#1f2937", 'width': 4},
                 'thickness': 0.75,
                 'value': probability
             }
         }
     ))
-    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=350, margin=dict(l=20, r=20, t=50, b=20))
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "#1f2937"}, height=350, margin=dict(l=20, r=20, t=50, b=20))
     return fig
 
 # --- 4. THE FRONT-END DASHBOARD ---
 st.set_page_config(page_title="Churn Radar", layout="wide", initial_sidebar_state="expanded")
 
-# Custom Tech CSS
+# Custom Light Theme CSS
 st.markdown("""
     <style>
-    .main {background-color: #0d1117;}
-    h1, h2, h3, p, span {color: #e6edf3;}
-    .stSlider > div > div > div > div {background-color: #58a6ff !important;}
-    .css-1d391kg {background-color: #161b22;} 
+    /* Force all text to be dark grey for readability */
+    h1, h2, h3, p, span, label, .stMarkdown {color: #1f2937 !important;}
+    
+    /* Make the slider track a crisp blue */
+    .stSlider > div > div > div > div {background-color: #3b82f6 !important;}
     </style>
     """, unsafe_allow_html=True)
 
 st.title("📡 Tactical Churn Radar")
-st.markdown("<p style='color:#8b949e; font-family: monospace;'>SYS_AGENT: 6-Factor Predictive GTM Engine // V2.0</p>", unsafe_allow_html=True)
+st.markdown("<p style='color:#6b7280; font-family: monospace;'>SYS_AGENT: 6-Factor Predictive GTM Engine // V2.0</p>", unsafe_allow_html=True)
 st.markdown("---")
 
-st.sidebar.markdown("<h2 style='text-align: center;'>[ CONTROL PANEL ]</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='text-align: center; color: #1f2937;'>[ CONTROL PANEL ]</h2>", unsafe_allow_html=True)
 
 in_tickets = st.sidebar.slider("Support Tickets Raised (7d)", 0, 5, 0)
 in_fail = st.sidebar.slider("Payment Failure Rate (%)", 0, 7, 0)
@@ -146,7 +148,7 @@ if st.sidebar.button("Run Radar Scan", type="primary", use_container_width=True)
         st.markdown(f"### Status: {color} {status}")
         st.info(f"**Action Required:** {rec}")
         
-        # Telemetry breakdown using st.metric
+        # Telemetry breakdown
         st.markdown("#### Primary Friction Vectors")
         m1, m2 = st.columns(2)
         m1.metric(label="Support Anomaly", value=f"{in_tickets} Tickets", delta="Critical" if in_tickets > 1 else "Normal", delta_color="inverse")
