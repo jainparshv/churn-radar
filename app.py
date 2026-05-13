@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-# --- 1. SYNTHETIC DATA GENERATOR (THE 6-FACTOR ENGINE) ---
+# --- 1. SYNTHETIC DATA GENERATOR (DESENSITIZED ENGAGEMENT ENGINE) ---
 @st.cache_data
 def generate_synthetic_data():
     np.random.seed(42)
@@ -17,24 +17,23 @@ def generate_synthetic_data():
     upi_recency = np.random.randint(0, 45, n) # Days since last UPI txn
     cart_abandon = np.random.randint(0, 2, n) # 1 if abandoned, 0 if not
     
-    # THE ARCHITECT'S LOGIC (With updated high-sensitivity weights)
-    # We penalize LOW logins. So (30 - logins) * 2.5
-    login_penalty = (30 - login_freq) * 2.5
+    # THE ARCHITECT'S LOGIC (Desensitized Top-of-Funnel)
+    # Lower penalty for low logins: (30 - logins) * 1.5
+    login_penalty = (30 - login_freq) * 1.5
     
-    # We penalize NEGATIVE session decay. If decay is -20%, it adds 30 points.
-    # If decay is positive (growing), it subtracts points.
-    decay_penalty = session_decay * -1.5 
+    # Drastically lower penalty for session time drops: * 0.5
+    decay_penalty = session_decay * -0.5 
     
     risk_score = (
-        login_penalty +               # +2.5 per missed daily login
-        decay_penalty +               # +1.5 per % drop in time
+        login_penalty +               # +1.5 per missed daily login (Desensitized)
+        decay_penalty +               # +0.5 per % drop in time (Desensitized)
         (payment_fail * 3.0) +        # +3.0 per 1% of failures (High Friction)
         (support_tickets * 12.0) +    # +12.0 per ticket (The Breaking Point)
         (cart_abandon * 10.0) +       # +10.0 flat for abandoned cart
         (upi_recency * 1.0)           # +1.0 per day of UPI inactivity
     )
     
-    # NEW THRESHOLD: 50 Points for the highly competitive Indian market
+    # THRESHOLD: 50 Points
     churn = np.where(risk_score > 50, 1, 0)
     
     df = pd.DataFrame({
@@ -120,4 +119,4 @@ if st.sidebar.button("Run Radar Scan", type="primary"):
     col2.info(rec)
         
 st.markdown("---")
-st.caption("**Architect Note:** Model trained on 10,000 synthetic profiles. Weights manually calibrated for high-competition markets (Switching Threshold: 50 pts). High penalty applied to Support Tickets (+12) and Payment Failures (+3 per 1%) due to the 'Silent Switch' consumer behavior model.")
+st.caption("**Architect Note:** Model trained on 10,000 synthetic profiles. Weights calibrated for utility/payment platforms. Engagement decay (Logins/Session Time) is desensitized, while friction metrics (Support Tickets & Failures) act as the primary structural drivers of the Churn Classification.")
